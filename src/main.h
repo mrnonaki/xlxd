@@ -129,7 +129,7 @@
 #define G3_CONFIG_PORT                  12345                               // UDP port
 #define G3_DV_PORT                      40000                               // UDP port
 #define G3_KEEPALIVE_PERIOD             10                                  // in seconds
-#define G3_KEEPALIVE_TIMEOUT            (G3_KEEPALIVE_PERIOD*10)            // in seconds
+#define G3_KEEPALIVE_TIMEOUT            6*3600                              // in seconds (6hours)
 
 
 // Transcoder server --------------------------------------------

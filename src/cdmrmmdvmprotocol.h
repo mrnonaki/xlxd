@@ -44,7 +44,7 @@
 #define MMDVM_SLOTTYPE_TERMINATOR    2
 
 // DMRMMDVM Module ID
-#define MMDVM_MODULE_ID             'D'
+#define MMDVM_MODULE_ID             'Z'
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // class

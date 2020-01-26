@@ -54,40 +54,14 @@ bool CPacketStream::Open(const CDvHeaderPacket &DvHeader, CClient *client)
         m_DvHeader = DvHeader;
         m_OwnerClient = client;
         m_LastPacketTime.Now();
-            switch (DvHeader.GetRpt2Module())
-            {
-                case A:
-                case B:
-                case C:
-                case D:
-                case E:
-                //case F:
-                //case G:
-                //case H:
-                //case I:
-                //case J:
-                //case K:
-                //case L:
-                //case M:
-                case N:
-                //case O:
-                //case P:
-                //case Q:
-                //case R:
-                //case S:
-                case T:
-                //case U:
-                //case V:
-                //case W:
-                //case X:
-                case Y:
-                //case Z:
-                    m_CodecStream = g_Transcoder.GetStream(this, client->GetCodec());
-                    break;
-                default:
-                    m_CodecStream = g_Transcoder.GetStream(this, CODEC_NONE);
-                    break;
-            }
+//            if ( DvHeader.GetRpt2Module() == 'A' || DvHeader.GetRpt2Module() == 'B' || DvHeader.GetRpt2Module() == 'C' || DvHeader.GetRpt2Module() == 'D' || DvHeader.GetRpt2Module() == 'E' )
+//            {
+                m_CodecStream = g_Transcoder.GetStream(this, client->GetCodec());
+//            }
+//            else
+//            {
+//                m_CodecStream = g_Transcoder.GetStream(this, CODEC_NONE);
+//            }
         ok = true;
     }
     return ok;

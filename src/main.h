@@ -159,7 +159,7 @@
 #define YSFNODEDB_REFRESH_RATE          180                                 // in minutes
 
 //Set to 1 to get rid of Suffixes for legal reasons e.g. LX
-#define REMOVE_CALLSIGN_SUFFIX          0
+#define REMOVE_CALLSIGN_SUFFIX          1
 
 // xml & json reporting -----------------------------------------
 

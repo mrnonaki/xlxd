@@ -1,9 +1,9 @@
 //
-//  cudpsocket.h
+//  crawsocket.h
 //  xlxd
 //
-//  Created by Jean-Luc Deltombe (LX3JL) on 31/10/2015.
-//  Copyright © 2015 Jean-Luc Deltombe (LX3JL). All rights reserved.
+//  Created by Marius Petrescu (YO2LOJ) on 22/02/2020.
+//  Copyright © 2020 Marius Petrescu (YO2LOJ). All rights reserved.
 //
 // ----------------------------------------------------------------------------
 //    This file is part of xlxd.
@@ -22,37 +22,42 @@
 //    along with Foobar.  If not, see <http://www.gnu.org/licenses/>. 
 // ----------------------------------------------------------------------------
 
-#ifndef cudpsocket_h
-#define cudpsocket_h
+// Description:
+//    Raw socket access class with protocol specific 
+
+
+#ifndef crawsocket_h
+#define crawsocket_h
 
 #include <sys/types.h>
-//#include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <arpa/inet.h>
 
+#include <netinet/ip.h>
+#include <netinet/ip_icmp.h>
 #include "cip.h"
 #include "cbuffer.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // define
 
-#define UDP_BUFFER_LENMAX       1024
+#define RAW_BUFFER_LENMAX       65536
 
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // class
 
-class CUdpSocket
+class CRawSocket
 {
 public:
     // constructor
-    CUdpSocket();
+    CRawSocket();
     
     // destructor
-    ~CUdpSocket();
+    ~CRawSocket();
     
     // open & close
     bool Open(uint16);
@@ -60,19 +65,35 @@ public:
     int  GetSocket(void)        { return m_Socket; }
     
     // read
+
+    // if ETH_P_ALL is used, the received data buffer will hold
+    // the ethernet header (struct ethhdr) followed by the IP header (struct iphdr),
+    // the protocol header (e.g tcp, udp, icmp) and the data.
+    // For specific protocols, the data content may vary depending on the protocol
+    // Returns the number of received bytes in buffer
+
     int Receive(CBuffer *, CIp *, int);
-    
+
+    // ICMP receive helper
+    // parameters:
+    //   buffer - packet receive buffer (starting with ip header)
+    //   ip - remote address (filled in on receive)
+    //   timeout - receive timeout in msec
+    // return value:
+    //   ICMP type, -1 if nothing was received
+
+    int IcmpReceive(CBuffer *, CIp *, int);
+
     // write
-    int Send(const CBuffer &, const CIp &);
-    int Send(const CBuffer &, const CIp &, uint16);
-    int Send(const char *, const CIp &);
-    int Send(const char *, const CIp &, uint16);
-    
+    // no write support - complexity makes it out of scope for now
+    // to be added if needed
+
 protected:
     // data
     int                 m_Socket;
+    int                 m_Proto;
     struct sockaddr_in  m_SocketAddr;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////
-#endif /* cudpsocket_h */
+#endif /* crawsocket_h */

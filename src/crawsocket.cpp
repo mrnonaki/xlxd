@@ -1,9 +1,9 @@
 //
-//  cudpsocket.cpp
+//  crawsocket.cpp
 //  xlxd
 //
-//  Created by Jean-Luc Deltombe (LX3JL) on 31/10/2015.
-//  Copyright © 2015 Jean-Luc Deltombe (LX3JL). All rights reserved.
+//  Created by Marius Petrescu (YO2LOJ) on 22/02/2020.
+//  Copyright © 2020 Marius Petrescu (YO2LOJ). All rights reserved.
 //
 // ----------------------------------------------------------------------------
 //    This file is part of xlxd.
@@ -25,13 +25,13 @@
 #include "main.h"
 #include <string.h>
 #include "creflector.h"
-#include "cudpsocket.h"
+#include "crawsocket.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // constructor
 
-CUdpSocket::CUdpSocket()
+CRawSocket::CRawSocket()
 {
     m_Socket = -1;
 }
@@ -39,7 +39,7 @@ CUdpSocket::CUdpSocket()
 ////////////////////////////////////////////////////////////////////////////////////////
 // destructor
 
-CUdpSocket::~CUdpSocket()
+CRawSocket::~CRawSocket()
 {
     if ( m_Socket != -1 )
     {
@@ -50,37 +50,25 @@ CUdpSocket::~CUdpSocket()
 ////////////////////////////////////////////////////////////////////////////////////////
 // open & close
 
-bool CUdpSocket::Open(uint16 uiPort)
+bool CRawSocket::Open(uint16 uiProto)
 {
     bool open = false;
+    int on = 1;
     
     // create socket
-    m_Socket = socket(PF_INET,SOCK_DGRAM,0);
+    m_Socket = socket(AF_INET,SOCK_RAW,uiProto);
     if ( m_Socket != -1 )
     {
-        // initialize sockaddr struct
-        ::memset(&m_SocketAddr, 0, sizeof(struct sockaddr_in));
-        m_SocketAddr.sin_family = AF_INET;
-        m_SocketAddr.sin_port = htons(uiPort);
-        m_SocketAddr.sin_addr.s_addr = inet_addr(g_Reflector.GetListenIp());
-        
-        if ( bind(m_Socket, (struct sockaddr *)&m_SocketAddr, sizeof(struct sockaddr_in)) == 0 )
-        {
-            fcntl(m_Socket, F_SETFL, O_NONBLOCK);
-            open = true;
-        }
-        else
-        {
-            close(m_Socket);
-            m_Socket = -1;
-        }
+        fcntl(m_Socket, F_SETFL, O_NONBLOCK);
+        open = true;
+        m_Proto = uiProto;
     }
     
     // done
     return open;
 }
 
-void CUdpSocket::Close(void)
+void CRawSocket::Close(void)
 {
     if ( m_Socket != -1 )
     {
@@ -92,82 +80,77 @@ void CUdpSocket::Close(void)
 ////////////////////////////////////////////////////////////////////////////////////////
 // read
 
-int CUdpSocket::Receive(CBuffer *Buffer, CIp *Ip, int timeout)
+int CRawSocket::Receive(CBuffer *Buffer, CIp *Ip, int timeout)
 {
     struct sockaddr_in Sin;
     fd_set FdSet;
     unsigned int uiFromLen = sizeof(struct sockaddr_in);
     int iRecvLen = -1;
     struct timeval tv;
-    
+
     // socket valid ?
     if ( m_Socket != -1 )
     {
+        // allocate buffer
+        Buffer->resize(UDP_BUFFER_LENMAX);
+
         // control socket
         FD_ZERO(&FdSet);
         FD_SET(m_Socket, &FdSet);
         tv.tv_sec = timeout / 1000;
         tv.tv_usec = (timeout % 1000) * 1000;
         select(m_Socket + 1, &FdSet, 0, 0, &tv);
-        
-        // allocate buffer
-        Buffer->resize(UDP_BUFFER_LENMAX);
-        
+
         // read
         iRecvLen = (int)recvfrom(m_Socket,
-            (void *)Buffer->data(), UDP_BUFFER_LENMAX,
+            (void *)Buffer->data(), RAW_BUFFER_LENMAX,
             0, (struct sockaddr *)&Sin, &uiFromLen);
-        
+
         // handle
         if ( iRecvLen != -1 )
         {
             // adjust buffer size
             Buffer->resize(iRecvLen);
-            
+
             // get IP
             Ip->SetSockAddr(&Sin);
         }
     }
- 
+
     // done
     return iRecvLen;
 }
 
-////////////////////////////////////////////////////////////////////////////////////////
-// write
+// protocol specific
 
-int CUdpSocket::Send(const CBuffer &Buffer, const CIp &Ip)
+// ICMP
+
+int CRawSocket::IcmpReceive(CBuffer *Buffer, CIp *Ip, int timeout)
 {
-    CIp temp(Ip);
-    return (int)::sendto(m_Socket,
-           (void *)Buffer.data(), Buffer.size(),
-           0, (struct sockaddr *)temp.GetSockAddr(), sizeof(struct sockaddr_in));
+    int iIcmpType = -1;
+    int iRecv;
+
+    if (m_Proto == IPPROTO_ICMP)
+    {
+        iRecv = Receive(Buffer, Ip, timeout);
+
+        if (iRecv >= (int)(sizeof(struct ip) + sizeof(struct icmp)))
+        {
+            struct ip *iph = (struct ip *)Buffer->data();
+            int iphdrlen = iph->ip_hl * 4;
+            struct icmp *icmph = (struct icmp *)((unsigned char *)iph + iphdrlen);
+            struct ip *remote_iph = (struct ip *)((unsigned char *)icmph + 8);
+
+            iIcmpType = icmph->icmp_type;
+
+            struct sockaddr_in Sin;
+            bzero(&Sin, sizeof(Sin));
+            Sin.sin_family = AF_INET;
+            Sin.sin_addr.s_addr = remote_iph->ip_dst.s_addr;
+
+            Ip->SetSockAddr(&Sin);
+
+        }
+    }
+    return iIcmpType;
 }
-
-int CUdpSocket::Send(const char *Buffer, const CIp &Ip)
-{
-    CIp temp(Ip);
-    return (int)::sendto(m_Socket,
-           (void *)Buffer, ::strlen(Buffer),
-           0, (struct sockaddr *)temp.GetSockAddr(), sizeof(struct sockaddr_in));
-}
-
-int CUdpSocket::Send(const CBuffer &Buffer, const CIp &Ip, uint16 destport)
-{
-    CIp temp(Ip);
-    temp.GetSockAddr()->sin_port = htons(destport);
-    return (int)::sendto(m_Socket,
-                         (void *)Buffer.data(), Buffer.size(),
-                         0, (struct sockaddr *)temp.GetSockAddr(), sizeof(struct sockaddr_in));
-}
-
-int CUdpSocket::Send(const char *Buffer, const CIp &Ip, uint16 destport)
-{
-    CIp temp(Ip);
-    temp.GetSockAddr()->sin_port = htons(destport);
-    return (int)::sendto(m_Socket,
-                         (void *)Buffer, ::strlen(Buffer),
-                         0, (struct sockaddr *)temp.GetSockAddr(), sizeof(struct sockaddr_in));
-}
-
-

@@ -84,7 +84,7 @@
 #define DEXTRA_PORT                     30001                               // UDP port
 #define DEXTRA_KEEPALIVE_PERIOD         3                                   // in seconds
 #define DEXTRA_KEEPALIVE_TIMEOUT        (DEXTRA_KEEPALIVE_PERIOD*10)        // in seconds
-#define DEXTRA_RECONNECT_PERIOD         0                                   // in seconds
+#define DEXTRA_RECONNECT_PERIOD         1                                   // in seconds
 
 // DPlus
 #define DPLUS_PORT                      20001                               // UDP port
@@ -100,7 +100,7 @@
 #define XLX_PORT                        10002                               // UDP port
 #define XLX_KEEPALIVE_PERIOD            1                                   // in seconds
 #define XLX_KEEPALIVE_TIMEOUT           (XLX_KEEPALIVE_PERIOD*30)           // in seconds
-#define XLX_RECONNECT_PERIOD            0                                   // in seconds
+#define XLX_RECONNECT_PERIOD            1                                   // in seconds
 
 // DMRPlus (dongle)
 #define DMRPLUS_PORT                    8880                                // UDP port

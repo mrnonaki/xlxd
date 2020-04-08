@@ -1,4 +1,4 @@
-﻿//
+//
 //  main.h
 //  xlxd
 //
@@ -48,8 +48,8 @@
 // version -----------------------------------------------------
 
 #define VERSION_MAJOR                   2
-#define VERSION_MINOR                   3
-#define VERSION_REVISION                5
+#define VERSION_MINOR                   4
+#define VERSION_REVISION                0
 
 // global ------------------------------------------------------
 
@@ -57,6 +57,7 @@
 #define JSON_MONITOR
 
 // debug -------------------------------------------------------
+
 //#define DEBUG_NO_ERROR_ON_XML_OPEN_FAIL
 //#define DEBUG_DUMPFILE
 

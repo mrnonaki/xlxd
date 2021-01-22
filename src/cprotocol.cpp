@@ -168,12 +168,7 @@ void CProtocol::OnDvLastFramePacketIn(CDvLastFramePacket *Frame, const CIp *Ip)
         stream->Lock();
         stream->Push(Frame);
         stream->Unlock();
-        
-        // and don't close the stream yet but rely on CheckStreamsTimeout
-        // mechanism, so the stream will be closed after the queues have
-        // been sinked out. This avoid last packets to be send back
-        // to transmitting client (master)
-        // g_Reflector.CloseStream(stream);
+        g_Reflector.CloseStream(stream);
     }
 }
 
